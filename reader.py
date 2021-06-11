@@ -22,7 +22,6 @@ class Reader:
         else:
             self.decrees = {}
         # Define series of interest
-        # TODO: (make it an argument to be applied for other series)
         self.serie = serie
         # Look for and load naturalized dict json if found
         if not file_nat:
