@@ -54,6 +54,23 @@ class Reader:
                 continue
 
     def read_pdf(self,pdf_path:str):
+        """Read the naturalization decrees pdf to extract useful information.
+
+        Read all the pages of the pdf where the decree information is, and extract
+        all the new naturalized persons and class them in the json data file.
+
+        Parameters
+        ----------
+        pdf_path : str, required.
+            => PDF path of new naturalization decree..
+
+
+        Example
+        -------
+        >>> example = Reader()
+        >>> example.read_pdf(pdf_path,)
+
+        """
         if not os.path.isfile(pdf_path): return
         # Load odf file
         reader = loaders.load_file(pdf_path)
@@ -120,11 +137,55 @@ class Reader:
                 self.naturalized[series].update({name:{"date":self.decree_current_date},"dep":dpt,"country":country})
     @staticmethod
     def get_date(pdf:PDFDocument) ->str:
+        """Static method to get the date of the decree.
+
+        Extract the date of the decree by reading specific argument of the PDF
+        title page.
+
+        Parameters
+        ----------
+        pdf : PDFDocument, required.
+            => Loaded PDF object from py_pdf_parser library.
+
+        Returns
+        -------
+        str:
+
+        => Date of the decree.
+
+
+        Example
+        -------
+        >>> Reader.get_date(pdf,)
+        15/08/2021
+        """
         if type(pdf) != PDFDocument: return None
         return dateparser.parse(pdf.get_page(1).elements[0].text().split("/")[0]).date().strftime("%d/%m/%Y")
 
     @staticmethod
     def get_decrees_count(pdf:PDFDocument) -> int:
+        """Count the degrees contained in the pdf.
+
+        Read a part of the title page and count only the amount of naturalization
+        decrees contianed in the pdf.
+
+        Parameters
+        ----------
+        pdf : PDFDocument, required.
+            => Loaded PDF object from py_pdf_parser library.
+
+        Returns
+        -------
+        int:
+
+        => Number of naturalization decrees contained in the pdf.
+
+
+        Example
+        -------
+        >>> Reader.get_decrees_count(pdf,)
+        3
+        """
         if type(pdf) != PDFDocument: return None
         page_first = pdf.get_page(1)
         # Tests which texts are present in first page of decree pdf, extracts
