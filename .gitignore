@@ -1,0 +1,27 @@
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+__pycache__/*
+*.py[cod]
+*$py.class
+.pytest_cache/
+# Jupyter Notebook
+*.ipynb_checkpoints
+dev.ipynb
+
+### Ignore pickles ###
+*.pkl
+**/*.pkl
+.pkl
+
+### vscode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+### Extra ###
+Mat.xlsx
+Conc0.xlsx

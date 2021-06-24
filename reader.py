@@ -81,7 +81,7 @@ class Reader:
         decrees_number = self.get_decrees_count(pdf=reader)
         page_last = reader.page_numbers[-1]
         # Define the pattern to look for the person
-        pattern_person = re.compile(r"([A-Z\-]*\s\(([a-z-A-Z\s\,\-À-ÿ\’]*){1,9}\)\,)(.*?)(\,\sdpt\s[0-9]{2,3}|\,\sdép\.\s[0-9]{2,3}){1}", re.UNICODE)
+        pattern_person = re.compile(r"([A-Z\-\s]*\s\(([a-z-A-Z\s\,\-À-ÿ\’]*){1,9}\)\,)(.*?)(\,\sdpt\s[0-9]{2,3}|\,\sdép\.\s[0-9]{2,3}){1}", re.UNICODE)
         # Define the pattern to look for the first decree after the first page
         # ptimize search since we will skip all text before this pattern
         pattern_first = re.compile(r"(Décret\sdu)(.*?)(\sNOR){1}", re.UNICODE)
@@ -116,6 +116,8 @@ class Reader:
         # Reduce long string to a horter string to optimize search
         mega_string = mega_string[i:final_pos]
         del final_pos,i,pattern_first,pattern_last
+        self.mega_string = mega_string
+        self.pattern_person = pattern_person
         # Get all the persons found within the optimized string
         final = []
         final = ["".join(ele) for ele in pattern_person.findall(mega_string)]
@@ -123,6 +125,8 @@ class Reader:
         # information (name, department, country of birth, date of decree).
         for person in final:
             if f"), NAT, 2020X {self.serie}" in person:
+                if "larrauri" in person.lower():
+                    print(person)
                 series = person.split(f"), NAT, 2020X {self.serie}")[-1].split(",")[0].strip()
                 name = person.split(f", né")[0].strip()
                 dpt = person.split(f", dép.")[-1].strip()
