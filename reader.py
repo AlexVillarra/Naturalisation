@@ -3,12 +3,13 @@ import dateparser
 import re
 import json
 import codecs
+import jellyfish
 from py_pdf_parser import loaders
 from py_pdf_parser.components import PDFDocument
-# from typing import Union, Tuple
+from typing import Union#, Tuple
 class Reader:
     """The PDF reader object needed to read pdfs."""
-    def __init__(self, file_decrees:str="", file_nat:str="", serie:str="027",**kwargs):
+    def __init__(self, file_decrees:str="", file_nat:str="", serie:str="027",first_name:str="",last_name:str="",**kwargs):
         if not file_decrees:
             file_decrees = r"src\decrees.json"
         else:
@@ -38,6 +39,9 @@ class Reader:
             self.count = 0
             self.naturalized = {f'{i:03}':{} for i in range(0,1000)}
         self.decree_current_date = ""
+        # Search for a specific name within the naturalized series
+        self.first_name = first_name
+        self.last_name = last_name
         # For all the files found in JOs folder call read_pdf and get data
         print(f"Naturalized of serie {self.serie} :",self.count)
         for file in os.listdir("JOs"):
@@ -139,6 +143,50 @@ class Reader:
                     # in a department of France.
                     country = "France"
                 self.naturalized[series].update({name:{"date":self.decree_current_date},"dep":dpt,"country":country})
+    
+    def search_person(self,first_name:str="",last_name:str="") -> Union[dict,str]:
+        """Looks for a person within the naturalized database
+
+        Looks for a person to see if he/she is within the series and prints out
+        the dictionary with information of in what decree he/she has been naturalized.
+
+        Keyword Parameters
+        ------------------
+        first_name : str, optional.
+            By default "".
+            => The first name of the person of interest.
+
+        last_name : str, optional.
+            By default "".
+            => The last name of the person of interest.
+
+        Returns
+        -------
+        Union[dict,str]:
+
+        => Either the dictionary of the information of the person if found, or a
+        message warning the person was not found or string was mispelled.
+
+
+        Example
+        -------
+        >>> example = Reader()
+        >>> example.search_person(first_name="Alejandro",last_name="Villarreal",)
+        {'VILLARREAL LARRAURI (Alejandro)': {'date': '23/06/2021'}, 'dep': '013', 'country': 'Mexique'}
+        """
+        if not first_name: first_name = self.first_name
+        if not last_name: last_name = self.last_name
+        persons = [list(val.keys())[0] if val else "" for val in self.naturalized.values()]
+        location = None
+        for i,person in enumerate(persons):
+            if not person:continue
+            last = person.split("(")[0].strip().strip(",")
+            first = person.split("(")[-1].strip(")").strip(",").strip()
+            if (first_name.lower() in first.lower()) and (last_name.lower() in last.lower()):
+                location = i
+        if location == None:
+            return "The simple search has not resulted in any result. Make sure name is spelled right. If name is spelled right, then the person has not yet been naturalized."
+        return self.naturalized[list(self.naturalized.keys())[location]]
     @staticmethod
     def get_date(pdf:PDFDocument) ->str:
         """Static method to get the date of the decree.
