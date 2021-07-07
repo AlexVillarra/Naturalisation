@@ -117,6 +117,10 @@ class JORF_Reader:
         # Search for a specific name within the naturalized series
         self.first_name = first_name
         self.last_name = last_name
+        # Define default json file locations
+        self._file_nat = file_nat
+        self._file_decrees = file_decrees
+        self.file_decrees_string = file_decrees_string
         # For all the files found in JOs folder call read_pdf and get data
         print(f"Naturalized of serie {self.serie} :",self.count)
         self._JOs_path = kwargs.get("JOs_path","JOs")
@@ -130,19 +134,19 @@ class JORF_Reader:
                 # Open the PDF file and parse it to get all information
                 #print(f"Reading {file_path} with date: {pdf_date}")
                 self.read_pdf(pdf_path=file_path)
-                with codecs.open(file_decrees_string,"w",encoding="utf-8") as f:
+                with codecs.open(self.file_decrees_string,"w",encoding="utf-8") as f:
                     json.dump(self.mega_string, f, ensure_ascii=False)
                 self.search_serie(serie=self.serie,pdf_path=file_path)
                 # Save updated decrees and naturalized json
-                with codecs.open(file_decrees,"w", encoding='utf-8') as f:
+                with codecs.open(self._file_decrees,"w", encoding='utf-8') as f:
                     json.dump(self.decrees, f, ensure_ascii=False)
-                with codecs.open(file_nat,"w",encoding="utf-8") as f:
+                with codecs.open(self._file_nat,"w",encoding="utf-8") as f:
                     json.dump(self.naturalized, f, ensure_ascii=False)
             else:
                 continue
             print(f"Naturalized of serie {self.serie} until Journal of {self.decree_current_date}:",len([ex for ex,val in self.naturalized[self.serie].items() if val]))
 
-    def read_pdf(self,pdf_path:str):
+    def read_pdf(self,pdf_path:str,save_json:bool=True,**kwargs):
         """Read the naturalization decrees pdf to extract useful information.
 
         Read all the pages of the pdf where the decree information is, and extract
@@ -152,6 +156,21 @@ class JORF_Reader:
         ----------
         pdf_path : str, required.
             => PDF path of new naturalization decree.
+
+        Keyword Parameters
+        ------------------
+        save_json : bool, optional.
+            By default True.
+            => Saves the json decree string dictionary to default saving files
+            (or specific see extra keyword parameters).
+
+        Extra arg/kwarg Parameters
+        ------------------
+        Allowed extra parameters (*args, or **kwargs) passed by specifying the keyword from the following list.
+        **kwargs : optional.
+            By default none are passed.
+
+            file_decrees_string => Save file path for decrees string json.
 
 
         Example
@@ -203,6 +222,10 @@ class JORF_Reader:
         mega_string = mega_string[i:final_pos]
         del final_pos,i,pattern_first,pattern_last
         self.mega_string[self.decree_current_date] = mega_string
+        if save_json:
+            file_decrees_string = kwargs.get("file_decrees_string",self._file_decrees_string)
+            with codecs.open(file_decrees_string,"w",encoding="utf-8") as f:
+                json.dump(self.mega_string, f, ensure_ascii=False)
 
 
 
@@ -225,7 +248,7 @@ class JORF_Reader:
         save_json : bool, optional.
             By default True.
             => Saves the json dictionaries to default saving files (or specific
-            see extra keywords).
+            see extra keyword parameters).
 
         search_person : bool, optional.
             By default False.
@@ -297,8 +320,8 @@ class JORF_Reader:
         # Save modified json dictionaries to defined paths
         if save_json:
             # Get file paths from kwargs, or default and save decrees and naturalized json
-            file_decrees = kwargs.get("file_decrees",r"results\decrees.json")
-            file_nat = kwargs.get("file_nat",r"results\naturalized.json")
+            file_decrees = kwargs.get("file_decrees",self._file_decrees)
+            file_nat = kwargs.get("file_nat",self._file_nat)
             with codecs.open(file_decrees,"w", encoding='utf-8') as f:
                 json.dump(self.decrees, f, ensure_ascii=False)
             with codecs.open(file_nat,"w",encoding="utf-8") as f:
