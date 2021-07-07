@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from genericpath import isfile
 import os,sys
 import dateparser
