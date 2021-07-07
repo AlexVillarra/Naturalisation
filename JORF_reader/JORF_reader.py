@@ -464,17 +464,17 @@ class JORF_Reader:
         decrees_found = len([ele for ele in raw if len(re.findall("portant naturalisation",re.sub(r"\s+|\t+"," ",ele.text())))])
         return decrees_found
 
-if __name__ == "__main__":
-    JOs_path = input("Please input the path for the folder containing all the JOs PDFs as downloaded from https://www.legifrance.gouv.fr")
-    if os.path.isdir(JOs_path):
-        first_name = str(input("Please input the first name of the person of interest"))
-        last_name = str(input("Please input the last name of the person of interest"))
-        serie = str(input("Please input the serie number of the person of interest (found on the dossier number given, e.g. 2020X 054, the number is 054, please include the '0' if appropriate)"))
-        if serie not in [f'{num:03}' for num in list(range(0,55))+[300,301,302,303,304,305]]:
-            print("The series number is invalid: must be between 0 and 54, or within special numbers (300-305). If series number is correct but still encounter this problem, please contact the developers. See github https://github.com/AlexVillarra/Naturalisation for contact.")
-        else:
-            main = JORF_Reader(first_name=first_name,last_name=last_name,JOs_path = JOs_path,serie=serie)
-            person = main.search_person(first_name=first_name,last_name=last_name,know_series=True)
-            print(person)
-    else:
-        print("The file path passed is not a directory")
+# if __name__ == "__main__":
+#     JOs_path = input("Please input the path for the folder containing all the JOs PDFs as downloaded from https://www.legifrance.gouv.fr")
+#     if os.path.isdir(JOs_path):
+#         first_name = str(input("Please input the first name of the person of interest"))
+#         last_name = str(input("Please input the last name of the person of interest"))
+#         serie = str(input("Please input the serie number of the person of interest (found on the dossier number given, e.g. 2020X 054, the number is 054, please include the '0' if appropriate)"))
+#         if serie not in [f'{num:03}' for num in list(range(0,55))+[300,301,302,303,304,305]]:
+#             print("The series number is invalid: must be between 0 and 54, or within special numbers (300-305). If series number is correct but still encounter this problem, please contact the developers. See github https://github.com/AlexVillarra/Naturalisation for contact.")
+#         else:
+#             main = JORF_Reader(first_name=first_name,last_name=last_name,JOs_path = JOs_path,serie=serie)
+#             person = main.search_person(first_name=first_name,last_name=last_name,know_series=True)
+#             print(person)
+#     else:
+#         print("The file path passed is not a directory")
