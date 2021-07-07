@@ -22,6 +22,6 @@ dev.ipynb
 !.vscode/extensions.json
 *.code-workspace
 
-### Extra ###
-Mat.xlsx
-Conc0.xlsx
+### Poetry ###
+poetry.lock
+dist/*
