@@ -25,3 +25,6 @@ dev.ipynb
 ### Poetry ###
 poetry.lock
 dist/*
+
+### GitHub ###
+.github
