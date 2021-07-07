@@ -68,6 +68,9 @@ class JORF_Reader:
             JOs_path => Path to the folder (including folder name) where JOs pdf
             files are stored as downloaded from https://www.legifrance.gouv.fr .
 
+            save_path => Path to the folder where results will be save. If nothing
+            is passed everything will be saved in the place the code is ran /results.
+
 
         Example
         -------
@@ -75,12 +78,13 @@ class JORF_Reader:
 
         """
         # Get initial arguments
+        self._save_path = kwargs.get("save_path",os.path.join(os.getcwd(),"results"))
         if not file_decrees:
-            file_decrees = r"results\decrees.json"
+            file_decrees = os.path.join(self._save_path,"decrees.json")
         else:
             if not os.path.isfile(file_decrees):
                 print("Give valid file path to decrees")
-                file_decrees = r"results\decrees_wrong_path.json"
+                file_decrees =  os.path.join(self._save_path,"decrees_wrong_path.json")
         # Look for and load decree json if found
         if os.path.isfile(file_decrees):
             with codecs.open(file_decrees, encoding='utf-8') as f:
@@ -89,7 +93,11 @@ class JORF_Reader:
             self.decrees = {f'{ser:03}' :{} for ser in list(range(0,55))+[300,301]}
         # Look for and load decree string json if found
         if not file_decrees_string:
-            file_decrees_string = r"results\decrees_string.json"
+            file_decrees_string = os.path.join(self._save_path,"decrees_string.json")
+        else:
+            if not os.path.isfile(file_nat):
+                print("Give valid file path to decrees")
+                file_decrees_string = os.path.join(self._save_path,"decrees_string_wrong_path.json")
         if os.path.isfile(file_decrees_string):
             with codecs.open(file_decrees_string, encoding='utf-8') as f:
                 self.mega_string = json.load(f)
@@ -102,11 +110,11 @@ class JORF_Reader:
             self.serie = serie
         # Look for and load naturalized dict json if found
         if not file_nat:
-            file_nat = r"results\naturalized.json"
+            file_nat = os.path.join(self._save_path,"naturalized.json")
         else:
             if not os.path.isfile(file_nat):
                 print("Give valid file path to decrees")
-                file_nat = r"results\naturalized_wrong_path.json"
+                file_nat = os.path.join(self._save_path,"naturalized_wrong_path.json")
         if os.path.isfile(file_nat):
             with codecs.open(file_nat, encoding='utf-8') as f:
                 self.naturalized = json.load(f)
@@ -123,7 +131,7 @@ class JORF_Reader:
         # Define default json file locations
         self._file_nat = file_nat
         self._file_decrees = file_decrees
-        self.file_decrees_string = file_decrees_string
+        self._file_decrees_string = file_decrees_string
         # For all the files found in JOs folder call read_pdf and get data
         print(f"Naturalized of serie {self.serie} :",self.count)
         self._JOs_path = kwargs.get("JOs_path","JOs")
@@ -137,7 +145,7 @@ class JORF_Reader:
                 # Open the PDF file and parse it to get all information
                 #print(f"Reading {file_path} with date: {pdf_date}")
                 self.read_pdf(pdf_path=file_path)
-                with codecs.open(self.file_decrees_string,"w",encoding="utf-8") as f:
+                with codecs.open(self._file_decrees_string,"w",encoding="utf-8") as f:
                     json.dump(self.mega_string, f, ensure_ascii=False)
                 self.search_serie(serie=self.serie,pdf_path=file_path)
                 # Save updated decrees and naturalized json
