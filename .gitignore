@@ -28,3 +28,6 @@ dist/*
 
 ### GitHub ###
 .github
+
+### Dev ###
+dev/*
