@@ -2,4 +2,4 @@
 # -*- coding: utf-8 -*-
 
 import os
-from .JORF_reader import JORF_Reader
+from .JORF_reader import Reader

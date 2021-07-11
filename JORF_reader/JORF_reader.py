@@ -11,11 +11,12 @@ import jellyfish
 from py_pdf_parser import loaders
 from py_pdf_parser.components import PDFDocument
 from typing import Union#, Tuple
+from datetime import datetime
 
-class JORF_Reader:
+class Reader:
     """The PDF reader object needed to read pdfs."""
     def __init__(self, file_decrees:str="",file_decrees_string:str="", file_nat:str="", serie:str="027",first_name:str="",last_name:str="", year:str="2020",**kwargs):
-        """Initialize JORF_Reader class for naturalization pdf parser/person finder
+        """Initialize Reader class for naturalization pdf parser/person finder
 
         Initializes the class object. PDF files containing the JOs (with names as
         downloaded from legifrance) must be stored in JOs directory. The default
@@ -26,62 +27,52 @@ class JORF_Reader:
         To see all the latest JOs published, it is highly recommended to take a look at:
         https://www.easytrangers.com/t/liste-des-decrets-de-naturalisation-2021/6199
 
-        **Keyword Parameters**
+        Keyword Arguments
         ------------------
-        `file_decrees` : *str*, optional.
+        file_decrees : str, optional.
             By default "".
-
             File path where the decrees json file will be stored
             If default is left, the file will be saved in r"results\\decrees.json".
 
-        `file_decrees_string` : *str*, optional.
+        file_decrees_string : str, optional.
             By default "".
-
             File path where the processes pdf string json file will be stored
             If default is left, the file will be saved in r"results\\decrees_string.json".
 
-        `file_nat` : *str*, optional.
+        file_nat : str, optional.
             By default "".
-
             File path where the naturalized person json file will be stored
             If default is left, the file will be saved in r"results\\naturalized.json".
 
-        `serie` : *str*, optional.
+        serie : str, optional.
             By default "027".
-
             String defining the series of interest.
 
-        `first_name` : *str*, optional.
+        first_name :str, optional.
             By default "".
-
             The first name of the person of interest.
 
-        `last_name` : *str*, optional.
+        last_name : str, optional.
             By default "".
-
             The last name of the person of interest.
 
-        `year` : *str*, optional.
+        year : str, optional.
             By default "2020".
-
             The year of interest.
 
-        **Extra arg/kwarg Parameters**
-        ------------------
-        Allowed extra parameters (*args, or **kwargs) passed by specifying the keyword from the following list.
-        **kwargs : optional.
-        By default none are passed.
-
-        `JOs_path` : *str*
-
+        Extra arg/kwarg
+        ---------------
+        JOs_path : str
             Path to the folder (including folder name) where JOs pdf files are
             stored as downloaded from https://www.legifrance.gouv.fr .
 
-        `save_path` : *str*
-
+        save_path : str
             Path to the folder where results will be save. If nothing is passed
             everything will be saved in the place the code is ran /results.
 
+
+        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).
+        By default none are passed.
 
         Example
         -------
@@ -103,13 +94,13 @@ class JORF_Reader:
             with codecs.open(file_decrees, encoding='utf-8') as f:
                 self.decrees = json.load(f)
         else:
-            self.decrees = {f'{ser:03}' :{} for ser in list(range(0,55))+[300,301]}
+            self.decrees = {}
         # Look for and load decree string json if found
         if not file_decrees_string:
             file_decrees_string = os.path.join(self._save_path,"decrees_string.json")
         else:
-            if not os.path.isfile(file_nat):
-                print("Give valid file path to decrees")
+            if not os.path.isfile(file_decrees_string):
+                print("Give valid file path to decrees string")
                 file_decrees_string = os.path.join(self._save_path,"decrees_string_wrong_path.json")
         if os.path.isfile(file_decrees_string):
             with codecs.open(file_decrees_string, encoding='utf-8') as f:
@@ -134,7 +125,7 @@ class JORF_Reader:
             self.count = len([nat for nat,value in self.naturalized[self.serie].items() if value])
         else:
             self.count = 0
-            self.naturalized = {f'{ser:03}' :{f'{i:03}':{} for i in range(0,1000)} for ser in list(range(0,55))+[300,301]}
+            self.naturalized = {f'{ser:03}' :{f'{i:03}':{} for i in range(0,1000)} for ser in list(range(0,55))+[300,301,302,303,304,305]}
         self.decree_current_date = ""
         # Define the pattern to look for the person
         self.pattern_person = re.compile(r"([A-Z\-\s]*\s\(([a-z-A-Z\s\,\-À-ÿ\’]*){1,9}\)\,)(.*?)(\,\sdpt\s[0-9]{2,3}|\,\sdép\.\s[0-9]{2,3}){1}", re.UNICODE)
@@ -145,9 +136,14 @@ class JORF_Reader:
         self._file_nat = file_nat
         self._file_decrees = file_decrees
         self._file_decrees_string = file_decrees_string
+        self._info = os.path.join(self._save_path,"info.json")
+        self._year = year
         # For all the files found in JOs folder call read_pdf and get data
         print(f"Naturalized of serie {self.serie} :",self.count)
         self._JOs_path = kwargs.get("JOs_path","JOs")
+        if not os.path.isdir(self._JOs_path):
+            print(f"The path {self._JOs_path} is not a valid directory where the JOs are contained.")
+            return
         for file in os.listdir(self._JOs_path):
             # Load pdf file
             file_path = os.path.join(self._JOs_path,file)
@@ -166,6 +162,8 @@ class JORF_Reader:
                     json.dump(self.decrees, f, ensure_ascii=False)
                 with codecs.open(self._file_nat,"w",encoding="utf-8") as f:
                     json.dump(self.naturalized, f, ensure_ascii=False)
+                with codecs.open(self._info,"w",encoding="utf-8") as f:
+                    json.dump({"year":self._year,"last_update":datetime.now().strftime("%d/%m/%Y")}, f, ensure_ascii=False)
             else:
                 continue
 
@@ -175,31 +173,26 @@ class JORF_Reader:
         Read all the pages of the pdf where the decree information is, and extract
         all the new naturalized persons and class them in the json data file.
 
-        **Parameters**
+        Arguments
         ----------
-        `pdf_path` : *str*, **required**.
-
+        pdf_path : str, required.
             PDF path of new naturalization decree.
 
-        **Keyword Parameters**
+        Keyword Arguments
         ------------------
-        `save_json` : *bool*, optional.
+        save_json : bool, optional.
             By default True.
+            Saves the json decree string dictionary to default saving files (or specific see extra keyword Arguments).
 
-                Saves the json decree string dictionary to default saving files
-                (or specific see extra keyword parameters).
-
-        **Extra arg/kwarg Parameters**
-        ------------------
-        Allowed extra parameters (*args, or **kwargs) passed by specifying the keyword from the following list.
-        **kwargs : optional.
-        By default none are passed.
-
-        `file_decrees_string` : *str*
-
+        Extra arg/kwarg
+        ---------------
+        file_decrees_string : str
             Save file path for decrees string json.
 
-        **Example**
+
+        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).
+
+        Example
         -------
         >>> example = JORF_Reader()
         >>> example.read_pdf(pdf_path,)
@@ -252,50 +245,47 @@ class JORF_Reader:
             with codecs.open(file_decrees_string,"w",encoding="utf-8") as f:
                 json.dump(self.mega_string, f, ensure_ascii=False)
 
-    def search_serie(self,serie:str="",pdf_path:str="",save_json:bool=True,search_person = False, **kwargs):
+    def search_serie(self,serie:str="",pdf_path:str="",save_json:bool=True,search_person: bool = False, all_series : bool =False,**kwargs):
         """Search for all persons of a serie in a decree.
 
         Searchs for all persons of a serie in a decree, and if the decree has not
         been read, it reads it.
 
-        **Keyword Parameters**
+        Keyword Arguments
         ------------------
-        `serie` : *str*, optional.
+        serie : str, optional.
             By default "".
-
             Number of the series (54 per year + special) to look for.
 
-        `pdf_path` : *str*, optional.
+        pdf_path : str, optional.
             By default "".
-
             PDF path of new naturalization decree.
 
-        `save_json` : *bool*, optional.
+        save_json : bool, optional.
             By default True.
-
             Saves the json dictionaries to default saving files (or specific see
-            extra keyword parameters).
+            extra keyword Arguments).
 
-        `search_person` : *bool*, optional.
+        search_person : bool, optional.
             By default False.
-
             Calls .search_person method to look for person of interest defined
             upon class object's instantiation.
 
-        **Extra arg/kwarg Parameters**
-        ------------------
-        Allowed extra parameters (*args, or **kwargs) passed by specifying the keyword from the following list.
-        **kwargs : optional.
-        By default none are passed.
+        all_series : bool, optional.
+            By default False.
+            Calls .search_person for all series [0-54 + special] if True.
 
-        `file_decrees` : *str*
-
+        Extra arg/kwarg
+        ---------------
+        file_decrees : str
             Save file path for decrees json.
 
-        `file_nat` : *str*
-
+        file_nat : str
             Save file path for naturalization json.
 
+
+        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).
+        By default none are passed.
 
         Example
         -------
@@ -306,6 +296,9 @@ class JORF_Reader:
         # If serie not passed, self.serie will be used
         if (not serie) or (type(serie) != str) or (serie not in [f'{i:03}' for i in range(0,1000)]):
             serie = self.serie
+        if all_series:
+            for ser in list(range(0,55))+[300,301,302,303,304,305]:
+                self.search_serie(serie=f'{ser:03}')
         self.serie = serie
         # If specific pdf path not given, the search will be done for all PDFs
         # found in the "JOs" folder.
@@ -313,11 +306,13 @@ class JORF_Reader:
             # For all files, open the PDF file and parse it to get all information
             for file in os.listdir(self._JOs_path):
                 pdf_path = os.path.join(self._JOs_path,file)
-                if self.get_date(pdf_path) is None :
+                date = self.get_date(pdf_path)
+                if date is None :
                     continue
-                if self.get_date(pdf_path) not in self.mega_string.keys():
+                if date not in self.mega_string.keys():
+                    print(f"calling read_pdf for {self.serie}")
                     self.read_pdf(pdf_path=pdf_path)
-                self.search_serie(serie=serie,pdf_path=pdf_path)
+                self.search_serie(serie=self.serie,pdf_path=pdf_path)
         if not os.path.isfile(pdf_path):
             print("pdf_path is not found, or not the correct path to the pdf file")
         current_date = self.get_date(pdf_path)
@@ -364,33 +359,29 @@ class JORF_Reader:
         Looks for a person to see if he/she is within the series and prints out
         the dictionary with information of in what decree he/she has been naturalized.
 
-        **Keyword Parameters**
+        Keyword Arguments
         ------------------
-        `first_name` : *str*, optional.
+        first_name : str, optional.
             By default "".
-
             The first name of the person of interest.
 
-        `last_name` : *str*, optional.
+        last_name : str, optional.
             By default "".
-
             The last name of the person of interest.
 
-        `know_serie` : *bool*, optional.
+        know_serie : bool, optional.
             By default True.
-
             True or False if the persons series is known and currently set in
             self.serie value.
 
-        **Returns**
+        Returns
         -------
-        `Union[dict,str]`:
+        Union[dict,str]:
+            Either the dictionary of the information of the person if found, or a
+            message warning the person was not found or string was misspelled.
 
-        Either the dictionary of the information of the person if found, or a
-        message warning the person was not found or string was misspelled.
 
-
-        **Example**
+        Example
         -------
         >>> example = JORF_Reader()
         >>> person = example.search_person(first_name="Alejandro",last_name="Villarreal",)
@@ -440,20 +431,18 @@ class JORF_Reader:
         Extract the date of the decree by reading specific argument of the PDF
         title page.
 
-        **Parameters**
+        Arguments
         ----------
-        `pdf` : *PDFDocument*, **required**.
-
+        pdf : PDFDocument, required.
             Loaded PDF object from py_pdf_parser library.
 
-        **Returns**
+        Returns
         -------
-        `str`:
+        str:
+            Date of the decree.
 
-        Date of the decree.
 
-
-        **Example**
+        Example
         -------
         >>> print(JORF_Reader.get_date(pdf,))
         15/08/2021
@@ -471,20 +460,18 @@ class JORF_Reader:
         Read a part of the title page and count only the amount of naturalization
         decrees contianed in the pdf.
 
-        **Parameters**
+        Arguments
         ----------
-        `pdf` : *PDFDocument*, **required**.
-
+        pdf : PDFDocument, required.
             Loaded PDF object from py_pdf_parser library.
 
-        **Returns**
+        Returns
         -------
-        `int`:
+        int:
+            Number of naturalization decrees contained in the pdf.
 
-        Number of naturalization decrees contained in the pdf.
 
-
-        **Example**
+        Example
         -------
         >>> print(JORF_Reader.get_decrees_count(pdf,))
         3
@@ -499,6 +486,115 @@ class JORF_Reader:
             raw = page_first.elements.after(page_first.elements.filter_by_text_contains("Naturalisations et réintégrations").extract_single_element())
         decrees_found = len([ele for ele in raw if len(re.findall("portant naturalisation",re.sub(r"\s+|\t+"," ",ele.text())))])
         return decrees_found
+
+
+
+# class Analyser:
+#     """The JORF analyser class object to produce statistics and extract information."""
+#     def __init__(self, file_decrees:str="",file_decrees_string:str="", file_nat:str="", year:str="2020",**kwargs):
+#         """Initialize the Analyser class for naturalization pdf parser/person finder
+
+#         Initializes the class object. With either the results stored in json files,
+#         or instantiating a **Reader** class object, it extracts information for all
+#         the series of a year and obtains statistics and produces graphs.
+
+#         **Keyword Arguments**
+#         ------------------
+#         `file_decrees` : *str*, optional.
+#             By default "".
+
+#             File path where the decrees json file will be stored
+#             If default is left, the file will be saved in r"results\\decrees.json".
+
+#         `file_decrees_string` : *str*, optional.
+#             By default "".
+
+#             File path where the processes pdf string json file will be stored
+#             If default is left, the file will be saved in r"results\\decrees_string.json".
+
+#         `file_nat` : *str*, optional.
+#             By default "".
+
+#             File path where the naturalized person json file will be stored
+#             If default is left, the file will be saved in r"results\\naturalized.json".
+
+#         `year` : *str*, optional.
+#             By default "2020".
+
+#             The year of interest.
+
+#         **Extra arg/kwarg**
+#         ------------------
+#         Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).
+#         **kwargs : optional.
+#         By default none are passed.
+
+#         `JOs_path` : *str*
+
+#             Path to the folder (including folder name) where JOs pdf files are
+#             stored as downloaded from https://www.legifrance.gouv.fr .
+
+#         `save_path` : *str*
+
+#             Path to the folder where results will be save. If nothing is passed
+#             everything will be saved in the place the code is ran /results.
+
+
+#         Example
+#         -------
+#         >>> example = JORF_Reader()
+
+#         """
+#         # Get initial arguments
+#         self._save_path = kwargs.get("save_path",os.path.join(os.getcwd(),"results"))
+#         self._year = year
+#         if not os.path.isdir(self._save_path):
+#             os.makedirs(self._save_path)
+#         # Look for and load decree json if found
+#         info_path = self._save_path,"info.json"
+#         if os.path.isfile(info_path):
+#             with codecs.open(info_path, encoding='utf-8') as f:
+#                 self._info = json.load(f)
+#         else:
+#             self.reader = self.load_Reader()
+#             return
+#         if not file_decrees:
+#             file_decrees = os.path.join(self._save_path,"decrees.json")
+#         if not file_decrees_string:
+#             file_decrees_string = os.path.join(self._save_path,"decrees_string.json")
+#         if not file_nat:
+#             file_nat = os.path.join(self._save_path,"naturalized.json")
+#         # Define default json file locations
+#         self._file_nat = file_nat
+#         self._file_decrees = file_decrees
+#         self._file_decrees_string = file_decrees_string
+#         if not os.path.isfile(file_decrees):
+#             print("Give valid file path to decrees")
+#             self.reader = self.load_Reader()
+#             return
+#         # Look for and load decree string json if found
+#         if not os.path.isfile(file_decrees_string):
+#             print("Give valid file path to decrees string")
+#             self.reader = self.load_Reader()
+#             return
+#         # Look for and load naturalized dict json if found
+#         if not os.path.isfile(file_nat):
+#             print("Give valid file path to decrees")
+#             self.reader = self.load_Reader()
+#             return
+#         if (self._info["year"] != self._year) or (self._info["last_update"] < datetime.now().strftime("%d/%m/%Y")):
+#             self.reader = self.load_Reader()
+#             return
+#         with codecs.open(file_decrees_string, encoding='utf-8') as f:
+#             self.mega_string = json.load(f)
+#         with codecs.open(file_decrees, encoding='utf-8') as f:
+#             self.decrees = json.load(f)
+#         with codecs.open(file_nat, encoding='utf-8') as f:
+#             self.naturalized = json.load(f)
+#         self.compare_decrees()
+#         def load_Reader(self):
+#             self.reader = Reader(file_decrees=self.file_decrees,file_decrees_string=self.file_decrees_string,file_nat=self.file_bat, year=self._year,save_path = self._save_path)
+            
 
 if __name__ == "__main__":
     JOs_path = input("Please input the path for the folder containing all the JOs PDFs as downloaded from https://www.legifrance.gouv.fr")

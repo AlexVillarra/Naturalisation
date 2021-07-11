@@ -15,17 +15,16 @@ JORF-reader is intended to be used as a PDF parser to obtain all the data from h
 ## Installation
 To install from PyPI using pip
 ```sh
-pip install XSteamPython
+pip install JORF-reader
 ```
 ## Requirements
-Requires only requires that `SciPy` be installed.
+Requires the following to be installed:
+`jellyfish = "^0.8.2"`
+`py-pdf-parser = "^0.10.0"`
+`dateparser = "^1.0.0"`
 
-For development, all dependencies are contained in `requirements.txt`.
 ## Documentation
 -   [JORF\_reader.JORF\_reader](docs/index.html)
-
-
-
 
 ## Usage
 ```python

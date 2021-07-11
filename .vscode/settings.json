@@ -5,6 +5,7 @@
         "FRAN",
         "FRANÇAISE",
         "ISSN",
+        "JORFs",
         "LARRAURI",
         "Mexique",
         "Naturalisations",
@@ -30,5 +31,6 @@
         "serie",
         "sont",
         "ues"
-    ]
+    ],
+    "restructuredtext.confPath": "${workspaceFolder}\\docs\\source"
 }
