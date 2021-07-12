@@ -1,0 +1,823 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>JORF_reader &mdash; JORF_reader 0.1.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> JORF_reader
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../JORF_reader.html">JORF_reader package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">JORF_reader</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">JORF_reader</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>JORF_reader</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for JORF_reader</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">from</span> <span class="nn">genericpath</span> <span class="kn">import</span> <span class="n">isfile</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">dateparser</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">jellyfish</span>
+<span class="kn">from</span> <span class="nn">py_pdf_parser</span> <span class="kn">import</span> <span class="n">loaders</span>
+<span class="kn">from</span> <span class="nn">py_pdf_parser.components</span> <span class="kn">import</span> <span class="n">PDFDocument</span>
+<span class="kn">from</span> <span class="nn">py_pdf_parser.exceptions</span> <span class="kn">import</span> <span class="n">PDFParserError</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="c1">#, Tuple</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<div class="viewcode-block" id="Reader"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader">[docs]</a><span class="k">class</span> <span class="nc">Reader</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;The PDF reader object needed to read pdfs.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Reader.__init__"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_decrees</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">file_decrees_string</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">file_nat</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">serie</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;027&quot;</span><span class="p">,</span><span class="n">first_name</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">last_name</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;2020&quot;</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize Reader class for naturalization pdf parser/person finder</span>
+
+<span class="sd">        Initializes the class object. PDF files containing the JOs (with names as</span>
+<span class="sd">        downloaded from legifrance) must be stored in JOs directory. The default</span>
+<span class="sd">        path to this folder is in the parent directory where the script is run</span>
+<span class="sd">        &quot;JOs&quot;. The extra kwarg argument &quot;JOs_path&quot; is accepted if other path pointing</span>
+<span class="sd">        to this folder is to be given.</span>
+
+<span class="sd">        To see all the latest JOs published, it is highly recommended to take a look at:</span>
+<span class="sd">        https://www.easytrangers.com/t/liste-des-decrets-de-naturalisation-2021/6199</span>
+
+<span class="sd">        Keyword Arguments</span>
+<span class="sd">        ------------------</span>
+<span class="sd">        file_decrees : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            File path where the decrees json file will be stored</span>
+<span class="sd">            If default is left, the file will be saved in r&quot;results\\decrees.json&quot;.</span>
+
+<span class="sd">        file_decrees_string : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            File path where the processes pdf string json file will be stored</span>
+<span class="sd">            If default is left, the file will be saved in r&quot;results\\decrees_string.json&quot;.</span>
+
+<span class="sd">        file_nat : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            File path where the naturalized person json file will be stored</span>
+<span class="sd">            If default is left, the file will be saved in r&quot;results\\naturalized.json&quot;.</span>
+
+<span class="sd">        serie : str, optional.</span>
+<span class="sd">            By default &quot;027&quot;.</span>
+<span class="sd">            String defining the series of interest.</span>
+
+<span class="sd">        first_name :str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            The first name of the person of interest.</span>
+
+<span class="sd">        last_name : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            The last name of the person of interest.</span>
+
+<span class="sd">        year : str, optional.</span>
+<span class="sd">            By default &quot;2020&quot;.</span>
+<span class="sd">            The year of interest.</span>
+
+<span class="sd">        Extra arg/kwarg</span>
+<span class="sd">        ---------------</span>
+<span class="sd">        JOs_path : str</span>
+<span class="sd">            Path to the folder (including folder name) where JOs pdf files are</span>
+<span class="sd">            stored as downloaded from https://www.legifrance.gouv.fr .</span>
+
+<span class="sd">        save_path : str</span>
+<span class="sd">            Path to the folder where results will be save. If nothing is passed</span>
+<span class="sd">            everything will be saved in the place the code is ran /results.</span>
+
+
+<span class="sd">        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).</span>
+<span class="sd">        By default none are passed.</span>
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; example = JORF_Reader()</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get initial arguments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_path&quot;</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span><span class="s2">&quot;results&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_decrees</span><span class="p">:</span>
+            <span class="n">file_decrees</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;decrees.json&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_decrees</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Give valid file path to decrees&quot;</span><span class="p">)</span>
+                <span class="n">file_decrees</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;decrees_wrong_path.json&quot;</span><span class="p">)</span>
+        <span class="c1"># Look for and load decree json if found</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_decrees</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_decrees</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span> <span class="o">=</span> <span class="p">{</span><span class="n">ser</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">ser</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]}</span>
+        <span class="c1"># Look for and load decree string json if found</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_decrees_string</span><span class="p">:</span>
+            <span class="n">file_decrees_string</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;decrees_string.json&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_decrees_string</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Give valid file path to decrees string&quot;</span><span class="p">)</span>
+                <span class="n">file_decrees_string</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;decrees_string_wrong_path.json&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_decrees_string</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_decrees_string</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Define series of interest</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">serie</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">serie</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">serie</span> <span class="o">=</span> <span class="s2">&quot;027&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">serie</span> <span class="o">=</span> <span class="n">serie</span>
+        <span class="c1"># Look for and load naturalized dict json if found</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_nat</span><span class="p">:</span>
+            <span class="n">file_nat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;naturalized.json&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_nat</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Give valid file path to decrees&quot;</span><span class="p">)</span>
+                <span class="n">file_nat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;naturalized_wrong_path.json&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_nat</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_nat</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">nat</span> <span class="k">for</span> <span class="n">nat</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ser</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span> <span class="p">:{</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)}</span> <span class="k">for</span> <span class="n">ser</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Define the pattern to look for the person</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pattern_person</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([A-Z\-\s]*\s\(([a-z-A-Z\s\,\-À-ÿ\’]*){1,9}\)\,)(.*?)(\,\sdpt\s[0-9]{2,3}|\,\sdép\.\s[0-9]{2,3})</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">UNICODE</span><span class="p">)</span>
+        <span class="c1"># Search for a specific name within the naturalized series</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span> <span class="o">=</span> <span class="n">first_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_name</span> <span class="o">=</span> <span class="n">last_name</span>
+        <span class="c1"># Define default json file locations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_nat</span> <span class="o">=</span> <span class="n">file_nat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees</span> <span class="o">=</span> <span class="n">file_decrees</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees_string</span> <span class="o">=</span> <span class="n">file_decrees_string</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_info</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;info.json&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_year</span> <span class="o">=</span> <span class="n">year</span>
+        <span class="c1"># For all the files found in JOs folder call read_pdf and get data</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Naturalized of serie </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2"> :&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;JOs_path&quot;</span><span class="p">,</span><span class="s2">&quot;JOs&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="si">}</span><span class="s2"> is not a valid directory where the JOs are contained.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">):</span>
+            <span class="c1"># Load pdf file</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">,</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">pdf_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pdf_date</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">pdf_date</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="c1"># Open the PDF file and parse it to get all information</span>
+                <span class="c1">#print(f&quot;Reading {file_path} with date: {pdf_date}&quot;)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees_string</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">search_serie</span><span class="p">(</span><span class="n">serie</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">,</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="c1"># Save updated decrees and naturalized json</span>
+                <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_nat</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;year&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">_year</span><span class="p">,</span><span class="s2">&quot;last_update&quot;</span><span class="p">:</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y&quot;</span><span class="p">)},</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span></div>
+
+<div class="viewcode-block" id="Reader.read_pdf"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.read_pdf">[docs]</a>    <span class="k">def</span> <span class="nf">read_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pdf_path</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span><span class="n">save_json</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read the naturalization decrees pdf to extract useful information.</span>
+
+<span class="sd">        Read all the pages of the pdf where the decree information is, and extract</span>
+<span class="sd">        all the new naturalized persons and class them in the json data file.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pdf_path : str, required.</span>
+<span class="sd">            PDF path of new naturalization decree.</span>
+
+<span class="sd">        Keyword Arguments</span>
+<span class="sd">        ------------------</span>
+<span class="sd">        save_json : bool, optional.</span>
+<span class="sd">            By default True.</span>
+<span class="sd">            Saves the json decree string dictionary to default saving files (or specific see extra keyword Arguments).</span>
+
+<span class="sd">        Extra arg/kwarg</span>
+<span class="sd">        ---------------</span>
+<span class="sd">        file_decrees_string : str</span>
+<span class="sd">            Save file path for decrees string json.</span>
+
+
+<span class="sd">        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).</span>
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; example = JORF_Reader()</span>
+<span class="sd">        &gt;&gt;&gt; example.read_pdf(pdf_path,)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">):</span> <span class="k">return</span>
+        <span class="c1"># Load pdf file</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">loaders</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+        <span class="c1"># Get date of decree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">pdf</span><span class="o">=</span><span class="n">reader</span><span class="p">)</span>
+        <span class="c1"># Get the number of decrees in the pdf file</span>
+        <span class="n">decrees_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_decrees_count</span><span class="p">(</span><span class="n">pdf</span><span class="o">=</span><span class="n">reader</span><span class="p">)</span>
+        <span class="n">page_last</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">page_numbers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Define the pattern to look for the first decree after the first page</span>
+        <span class="c1"># Optimize search since we will skip all text before this pattern</span>
+        <span class="n">pattern_first</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(Décret\sdu)(.*?)(\sNOR)</span><span class="si">{1}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">UNICODE</span><span class="p">)</span>
+        <span class="c1"># Get all text in first page</span>
+        <span class="n">first_page</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+|\t+|\n&quot;</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="n">ele</span><span class="o">.</span><span class="n">text</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">elements</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;JOURNAL  OFFICIEL  DE  LA  RÉPUBLIQUE  FRANÇAISE &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Depending on the first page, define the pattern to be used as the last</span>
+        <span class="c1"># block to optimize search for persons and neglect all text after pattern.</span>
+        <span class="k">if</span> <span class="s2">&quot;Décret modificatif du&quot;</span> <span class="ow">in</span> <span class="n">first_page</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Décret modificatif du&quot;</span><span class="p">,</span><span class="n">first_page</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;portant naturalisation&quot;</span><span class="p">,</span><span class="n">first_page</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">():</span>
+                <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;Décret modificatif du&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;Annonces&quot;</span> <span class="ow">in</span> <span class="n">first_page</span><span class="p">:</span>
+                    <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;Les annonces sont reçues à la direction de l’information légale et administrative&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;ISSN\s[0-9]*\-{0,1}[0-9]*&quot;</span>
+        <span class="k">elif</span> <span class="s2">&quot;rapportant un décret de naturalisation&quot;</span> <span class="ow">in</span> <span class="n">first_page</span><span class="p">:</span>
+            <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;rapportant un décret de naturalisation&quot;</span>
+        <span class="k">elif</span> <span class="s2">&quot;Annonces&quot;</span> <span class="ow">in</span> <span class="n">first_page</span><span class="p">:</span>
+            <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;Les annonces sont reçues à la direction de l’information légale et administrative&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pattern_last</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;ISSN\s[0-9]*\-{0,1}[0-9]*&quot;</span>
+        <span class="k">del</span> <span class="n">first_page</span>
+        <span class="n">mega_string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="c1"># Get all text for all pages after the first one into a long string</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">page_last</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">mega_string</span> <span class="o">=</span> <span class="n">mega_string</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+|\t+|\n&quot;</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="n">ele</span><span class="o">.</span><span class="n">text</span><span class="p">())</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">elements</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;JOURNAL  OFFICIEL  DE  LA  RÉPUBLIQUE  FRANÇAISE &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">reader</span>
+        <span class="c1"># Get initial position within long string where search will be made</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern_first</span><span class="p">,</span> <span class="n">mega_string</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="c1"># Get final position within long string where search will be made</span>
+        <span class="n">final_pos</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern_last</span><span class="p">,</span> <span class="n">mega_string</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="c1"># Reduce long string to a horter string to optimize search</span>
+        <span class="n">mega_string</span> <span class="o">=</span> <span class="n">mega_string</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">final_pos</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">final_pos</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="n">pattern_first</span><span class="p">,</span><span class="n">pattern_last</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span><span class="p">]</span> <span class="o">=</span> <span class="n">mega_string</span>
+        <span class="k">if</span> <span class="n">save_json</span><span class="p">:</span>
+            <span class="n">file_decrees_string</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_decrees_string&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees_string</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_decrees_string</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reader.search_serie"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.search_serie">[docs]</a>    <span class="k">def</span> <span class="nf">search_serie</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">serie</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">pdf_path</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">save_json</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">search_person</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">all_series</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Search for all persons of a serie in a decree.</span>
+
+<span class="sd">        Searchs for all persons of a serie in a decree, and if the decree has not</span>
+<span class="sd">        been read, it reads it.</span>
+
+<span class="sd">        Keyword Arguments</span>
+<span class="sd">        ------------------</span>
+<span class="sd">        serie : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            Number of the series (54 per year + special) to look for.</span>
+
+<span class="sd">        pdf_path : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            PDF path of new naturalization decree.</span>
+
+<span class="sd">        save_json : bool, optional.</span>
+<span class="sd">            By default True.</span>
+<span class="sd">            Saves the json dictionaries to default saving files (or specific see</span>
+<span class="sd">            extra keyword Arguments).</span>
+
+<span class="sd">        search_person : bool, optional.</span>
+<span class="sd">            By default False.</span>
+<span class="sd">            Calls .search_person method to look for person of interest defined</span>
+<span class="sd">            upon class object&#39;s instantiation.</span>
+
+<span class="sd">        all_series : bool, optional.</span>
+<span class="sd">            By default False.</span>
+<span class="sd">            Calls .search_person for all series [0-54 + special] if True.</span>
+
+<span class="sd">        Extra arg/kwarg</span>
+<span class="sd">        ---------------</span>
+<span class="sd">        file_decrees : str</span>
+<span class="sd">            Save file path for decrees json.</span>
+
+<span class="sd">        file_nat : str</span>
+<span class="sd">            Save file path for naturalization json.</span>
+
+
+<span class="sd">        Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).</span>
+<span class="sd">        By default none are passed.</span>
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; example = JORF_Reader()</span>
+<span class="sd">        &gt;&gt;&gt; example.read_pdf(pdf_path)</span>
+<span class="sd">        &gt;&gt;&gt; example.search_serie(&quot;027&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If serie not passed, self.serie will be used</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">serie</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">serie</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">serie</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">)]):</span>
+            <span class="n">serie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serie</span>
+        <span class="k">if</span> <span class="n">all_series</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">ser</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">search_serie</span><span class="p">(</span><span class="n">serie</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">ser</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serie</span> <span class="o">=</span> <span class="n">serie</span>
+        <span class="c1"># If specific pdf path not given, the search will be done for all PDFs</span>
+        <span class="c1"># found in the &quot;JOs&quot; folder.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pdf_path</span><span class="p">:</span>
+            <span class="c1"># For all files, open the PDF file and parse it to get all information</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">):</span>
+                <span class="n">pdf_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">,</span><span class="n">file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pdf_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping </span><span class="si">{</span><span class="n">pdf_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">None</span>
+                <span class="n">date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">date</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">date</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;calling read_pdf for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">pdf_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">search_serie</span><span class="p">(</span><span class="n">serie</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">,</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">pdf_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pdf_path is not found, or not the correct path to the pdf file&quot;</span><span class="p">)</span>
+        <span class="n">current_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="o">=</span> <span class="n">current_date</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">current_date</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">pdf_path</span><span class="p">)</span>
+        <span class="c1"># Get all the persons found within the optimized string</span>
+        <span class="n">final</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">final</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ele</span><span class="p">)</span> <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pattern_person</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="p">[</span><span class="n">current_date</span><span class="p">])]</span>
+        <span class="c1"># For all persons found, look if they match series of interest and extract</span>
+        <span class="c1"># information (name, department, country of birth, date of decree).</span>
+        <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">final</span><span class="p">:</span>
+            <span class="k">if</span> <span class="sa">f</span><span class="s2">&quot;), NAT, 2020X </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">person</span><span class="p">:</span>
+                <span class="n">series</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;), NAT, 2020X </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;, né&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">dpt</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;, dép.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;né[e]{0,1} le [0-9]</span><span class="si">{2}</span><span class="s2">\/[0-9]</span><span class="si">{2}</span><span class="s2">/[0-9]</span><span class="si">{4}</span><span class="s2"> à&quot;</span><span class="p">,</span><span class="n">person</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">born_in</span><span class="p">,</span><span class="n">country</span> <span class="o">=</span> <span class="n">temp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)</span>
+                <span class="n">born_in</span> <span class="o">=</span> <span class="n">born_in</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">country</span> <span class="o">=</span> <span class="n">country</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">country</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                    <span class="c1"># If born_in strign is a number it means the person was born</span>
+                    <span class="c1"># in a department of France.</span>
+                    <span class="n">country</span> <span class="o">=</span> <span class="s2">&quot;France&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">][</span><span class="n">series</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">name</span><span class="p">:{</span><span class="s2">&quot;date&quot;</span><span class="p">:</span><span class="n">current_date</span><span class="p">},</span><span class="s2">&quot;dep&quot;</span><span class="p">:</span><span class="n">dpt</span><span class="p">,</span><span class="s2">&quot;country&quot;</span><span class="p">:</span><span class="n">country</span><span class="p">})</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Naturalized of serie </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2"> until Journal of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">,</span><span class="nb">len</span><span class="p">([</span><span class="n">ex</span> <span class="k">for</span> <span class="n">ex</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">val</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">current_date</span><span class="p">:</span><span class="n">pdf_path</span><span class="p">})</span>
+        <span class="c1"># Calls search_person to print the name (if found) of person of interest</span>
+        <span class="k">if</span> <span class="n">search_person</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_person</span><span class="p">(</span><span class="n">first_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">last_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_name</span><span class="p">,</span><span class="n">known_serie</span> <span class="o">=</span> <span class="kc">True</span><span class="p">))</span>
+        <span class="c1"># Save modified json dictionaries to defined paths</span>
+        <span class="k">if</span> <span class="n">save_json</span><span class="p">:</span>
+            <span class="c1"># Get file paths from kwargs, or default and save decrees and naturalized json</span>
+            <span class="n">file_decrees</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_decrees&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_decrees</span><span class="p">)</span>
+            <span class="n">file_nat</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;file_nat&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_nat</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_decrees</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_nat</span><span class="p">,</span><span class="s2">&quot;w&quot;</span><span class="p">,</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reader.search_person"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.search_person">[docs]</a>    <span class="k">def</span> <span class="nf">search_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">first_name</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">last_name</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">know_series</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;Looks for a person within the naturalized database</span>
+
+<span class="sd">        Looks for a person to see if he/she is within the series and prints out</span>
+<span class="sd">        the dictionary with information of in what decree he/she has been naturalized.</span>
+
+<span class="sd">        Keyword Arguments</span>
+<span class="sd">        ------------------</span>
+<span class="sd">        first_name : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            The first name of the person of interest.</span>
+
+<span class="sd">        last_name : str, optional.</span>
+<span class="sd">            By default &quot;&quot;.</span>
+<span class="sd">            The last name of the person of interest.</span>
+
+<span class="sd">        know_serie : bool, optional.</span>
+<span class="sd">            By default True.</span>
+<span class="sd">            True or False if the persons series is known and currently set in</span>
+<span class="sd">            self.serie value.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Union[dict,str]:</span>
+<span class="sd">            Either the dictionary of the information of the person if found, or a</span>
+<span class="sd">            message warning the person was not found or string was misspelled.</span>
+
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; example = JORF_Reader()</span>
+<span class="sd">        &gt;&gt;&gt; person = example.search_person(first_name=&quot;Alejandro&quot;,last_name=&quot;Villarreal&quot;,)</span>
+<span class="sd">        &gt;&gt;&gt; print(person)</span>
+<span class="sd">        {&#39;VILLARREAL LARRAURI (Alejandro)&#39;: {&#39;date&#39;: &#39;23/06/2021&#39;}, &#39;dep&#39;: &#39;013&#39;, &#39;country&#39;: &#39;Mexique&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">first_name</span><span class="p">:</span> <span class="n">first_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">last_name</span><span class="p">:</span> <span class="n">last_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_name</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">know_series</span><span class="p">:</span>
+            <span class="c1"># If the series is known, only gets results from the naturalized dictionary</span>
+            <span class="c1"># only from the serie of interest.</span>
+            <span class="n">persons</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">val</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">person</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">persons</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">person</span><span class="p">:</span><span class="k">continue</span>
+                <span class="n">last</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+                <span class="n">first</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">first_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">first</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">last</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+                    <span class="n">location</span> <span class="o">=</span> <span class="n">i</span>
+                    <span class="k">break</span>
+            <span class="n">persona</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">][</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">location</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If the series is NOT known, gets results from the naturalized dictionary</span>
+            <span class="c1"># from all the series, and returns the persons information and date of</span>
+            <span class="c1"># publication if found.</span>
+            <span class="n">persons</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">serie</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">persons</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">serie</span><span class="p">,</span><span class="nb">list</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">val</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">person</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">persons</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">person</span><span class="p">:</span><span class="k">continue</span>
+                    <span class="n">last</span> <span class="o">=</span> <span class="n">person</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+                    <span class="n">first</span> <span class="o">=</span> <span class="n">person</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">first_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">first</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">last</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+                        <span class="n">location</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="n">found_in</span> <span class="o">=</span> <span class="n">serie</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">location</span><span class="p">:</span>
+                    <span class="n">persona</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="n">found_in</span><span class="p">][</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">naturalized</span><span class="p">[</span><span class="n">found_in</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">location</span><span class="p">]]</span>
+                    <span class="k">break</span>
+        <span class="k">if</span> <span class="n">location</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;The simple search has not resulted in any result. Make sure name is spelled right. If name is spelled right, then the person has not yet been naturalized.&quot;</span>
+        <span class="k">return</span> <span class="n">persona</span></div>
+<div class="viewcode-block" id="Reader.get_date"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.get_date">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_date</span><span class="p">(</span><span class="n">pdf</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">PDFDocument</span><span class="p">,</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Static method to get the date of the decree.</span>
+
+<span class="sd">        Extract the date of the decree by reading specific argument of the PDF</span>
+<span class="sd">        title page.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pdf : PDFDocument, required.</span>
+<span class="sd">            Loaded PDF object from py_pdf_parser library.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str:</span>
+<span class="sd">            Date of the decree.</span>
+
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; print(JORF_Reader.get_date(pdf,))</span>
+<span class="sd">        15/08/2021</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span> <span class="o">!=</span> <span class="n">PDFDocument</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">pdf</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">pdf</span> <span class="o">=</span> <span class="n">loaders</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dateparser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">pdf</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">elements</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Reader.get_decrees_count"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.get_decrees_count">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_decrees_count</span><span class="p">(</span><span class="n">pdf</span><span class="p">:</span><span class="n">PDFDocument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Count the degrees contained in the pdf.</span>
+
+<span class="sd">        Read a part of the title page and count only the amount of naturalization</span>
+<span class="sd">        decrees contianed in the pdf.</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pdf : PDFDocument, required.</span>
+<span class="sd">            Loaded PDF object from py_pdf_parser library.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int:</span>
+<span class="sd">            Number of naturalization decrees contained in the pdf.</span>
+
+
+<span class="sd">        Example</span>
+<span class="sd">        -------</span>
+<span class="sd">        &gt;&gt;&gt; print(JORF_Reader.get_decrees_count(pdf,))</span>
+<span class="sd">        3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span> <span class="o">!=</span> <span class="n">PDFDocument</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">page_first</span> <span class="o">=</span> <span class="n">pdf</span><span class="o">.</span><span class="n">get_page</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># Tests which texts are present in first page of decree pdf, extracts</span>
+        <span class="c1"># the text containing the decrees and counts the number of decrees.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">([</span><span class="n">ele</span> <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">filter_by_text_contains</span><span class="p">(</span><span class="s2">&quot;Annonces&quot;</span><span class="p">)])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">filter_by_text_contains</span><span class="p">(</span><span class="s2">&quot;Naturalisations et réintégrations&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">extract_single_element</span><span class="p">(),</span><span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">filter_by_text_contains</span><span class="p">(</span><span class="s2">&quot;Annonces&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">extract_single_element</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw</span> <span class="o">=</span> <span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="n">page_first</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">filter_by_text_contains</span><span class="p">(</span><span class="s2">&quot;Naturalisations et réintégrations&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">extract_single_element</span><span class="p">())</span>
+        <span class="n">decrees_found</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">ele</span> <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">raw</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;portant naturalisation&quot;</span><span class="p">,</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+|\t+&quot;</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="n">ele</span><span class="o">.</span><span class="n">text</span><span class="p">())))])</span>
+        <span class="k">return</span> <span class="n">decrees_found</span></div></div>
+
+
+
+<span class="c1"># class Analyser:</span>
+<span class="c1">#     &quot;&quot;&quot;The JORF analyser class object to produce statistics and extract information.&quot;&quot;&quot;</span>
+<span class="c1">#     def __init__(self, file_decrees:str=&quot;&quot;,file_decrees_string:str=&quot;&quot;, file_nat:str=&quot;&quot;, year:str=&quot;2020&quot;,**kwargs):</span>
+<span class="c1">#         &quot;&quot;&quot;Initialize the Analyser class for naturalization pdf parser/person finder</span>
+
+<span class="c1">#         Initializes the class object. With either the results stored in json files,</span>
+<span class="c1">#         or instantiating a **Reader** class object, it extracts information for all</span>
+<span class="c1">#         the series of a year and obtains statistics and produces graphs.</span>
+
+<span class="c1">#         **Keyword Arguments**</span>
+<span class="c1">#         ------------------</span>
+<span class="c1">#         `file_decrees` : *str*, optional.</span>
+<span class="c1">#             By default &quot;&quot;.</span>
+
+<span class="c1">#             File path where the decrees json file will be stored</span>
+<span class="c1">#             If default is left, the file will be saved in r&quot;results\\decrees.json&quot;.</span>
+
+<span class="c1">#         `file_decrees_string` : *str*, optional.</span>
+<span class="c1">#             By default &quot;&quot;.</span>
+
+<span class="c1">#             File path where the processes pdf string json file will be stored</span>
+<span class="c1">#             If default is left, the file will be saved in r&quot;results\\decrees_string.json&quot;.</span>
+
+<span class="c1">#         `file_nat` : *str*, optional.</span>
+<span class="c1">#             By default &quot;&quot;.</span>
+
+<span class="c1">#             File path where the naturalized person json file will be stored</span>
+<span class="c1">#             If default is left, the file will be saved in r&quot;results\\naturalized.json&quot;.</span>
+
+<span class="c1">#         `year` : *str*, optional.</span>
+<span class="c1">#             By default &quot;2020&quot;.</span>
+
+<span class="c1">#             The year of interest.</span>
+
+<span class="c1">#         **Extra arg/kwarg**</span>
+<span class="c1">#         ------------------</span>
+<span class="c1">#         Allowed extra Arguments (\*args, or \**kwargs) passed by specifying the keyword from the previous list (see Extra arg/kwarg).</span>
+<span class="c1">#         **kwargs : optional.</span>
+<span class="c1">#         By default none are passed.</span>
+
+<span class="c1">#         `JOs_path` : *str*</span>
+
+<span class="c1">#             Path to the folder (including folder name) where JOs pdf files are</span>
+<span class="c1">#             stored as downloaded from https://www.legifrance.gouv.fr .</span>
+
+<span class="c1">#         `save_path` : *str*</span>
+
+<span class="c1">#             Path to the folder where results will be save. If nothing is passed</span>
+<span class="c1">#             everything will be saved in the place the code is ran /results.</span>
+
+
+<span class="c1">#         Example</span>
+<span class="c1">#         -------</span>
+<span class="c1">#         &gt;&gt;&gt; example = JORF_Reader()</span>
+
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         # Get initial arguments</span>
+<span class="c1">#         self._save_path = kwargs.get(&quot;save_path&quot;,os.path.join(os.getcwd(),&quot;results&quot;))</span>
+<span class="c1">#         self._year = year</span>
+<span class="c1">#         if not os.path.isdir(self._save_path):</span>
+<span class="c1">#             os.makedirs(self._save_path)</span>
+<span class="c1">#         # Look for and load decree json if found</span>
+<span class="c1">#         info_path = self._save_path,&quot;info.json&quot;</span>
+<span class="c1">#         if os.path.isfile(info_path):</span>
+<span class="c1">#             with codecs.open(info_path, encoding=&#39;utf-8&#39;) as f:</span>
+<span class="c1">#                 self._info = json.load(f)</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             self.reader = self.load_Reader()</span>
+<span class="c1">#             return</span>
+<span class="c1">#         if not file_decrees:</span>
+<span class="c1">#             file_decrees = os.path.join(self._save_path,&quot;decrees.json&quot;)</span>
+<span class="c1">#         if not file_decrees_string:</span>
+<span class="c1">#             file_decrees_string = os.path.join(self._save_path,&quot;decrees_string.json&quot;)</span>
+<span class="c1">#         if not file_nat:</span>
+<span class="c1">#             file_nat = os.path.join(self._save_path,&quot;naturalized.json&quot;)</span>
+<span class="c1">#         # Define default json file locations</span>
+<span class="c1">#         self._file_nat = file_nat</span>
+<span class="c1">#         self._file_decrees = file_decrees</span>
+<span class="c1">#         self._file_decrees_string = file_decrees_string</span>
+<span class="c1">#         if not os.path.isfile(file_decrees):</span>
+<span class="c1">#             print(&quot;Give valid file path to decrees&quot;)</span>
+<span class="c1">#             self.reader = self.load_Reader()</span>
+<span class="c1">#             return</span>
+<span class="c1">#         # Look for and load decree string json if found</span>
+<span class="c1">#         if not os.path.isfile(file_decrees_string):</span>
+<span class="c1">#             print(&quot;Give valid file path to decrees string&quot;)</span>
+<span class="c1">#             self.reader = self.load_Reader()</span>
+<span class="c1">#             return</span>
+<span class="c1">#         # Look for and load naturalized dict json if found</span>
+<span class="c1">#         if not os.path.isfile(file_nat):</span>
+<span class="c1">#             print(&quot;Give valid file path to decrees&quot;)</span>
+<span class="c1">#             self.reader = self.load_Reader()</span>
+<span class="c1">#             return</span>
+<span class="c1">#         if (self._info[&quot;year&quot;] != self._year) or (self._info[&quot;last_update&quot;] &lt; datetime.now().strftime(&quot;%d/%m/%Y&quot;)):</span>
+<span class="c1">#             self.reader = self.load_Reader()</span>
+<span class="c1">#             return</span>
+<span class="c1">#         with codecs.open(file_decrees_string, encoding=&#39;utf-8&#39;) as f:</span>
+<span class="c1">#             self.mega_string = json.load(f)</span>
+<span class="c1">#         with codecs.open(file_decrees, encoding=&#39;utf-8&#39;) as f:</span>
+<span class="c1">#             self.decrees = json.load(f)</span>
+<span class="c1">#         with codecs.open(file_nat, encoding=&#39;utf-8&#39;) as f:</span>
+<span class="c1">#             self.naturalized = json.load(f)</span>
+<span class="c1">#         self.compare_decrees()</span>
+<span class="c1">#         def load_Reader(self):</span>
+<span class="c1">#             self.reader = Reader(file_decrees=self.file_decrees,file_decrees_string=self.file_decrees_string,file_nat=self.file_bat, year=self._year,save_path = self._save_path)</span>
+            
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">JOs_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please input the path for the folder containing all the JOs PDFs as downloaded from https://www.legifrance.gouv.fr&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">JOs_path</span><span class="p">):</span>
+        <span class="n">first_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please input the first name of the person of interest&quot;</span><span class="p">))</span>
+        <span class="n">last_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please input the last name of the person of interest&quot;</span><span class="p">))</span>
+        <span class="n">serie</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please input the serie number of the person of interest (found on the dossier number given, e.g. 2020X 054, the number is 054, please include the &#39;0&#39; if appropriate)&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">serie</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">num</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The series number is invalid: must be between 0 and 54, or within special numbers (300-305). If series number is correct but still encounter this problem, please contact the developers. See github https://github.com/AlexVillarra/Naturalisation for contact.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">main</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="n">first_name</span><span class="p">,</span><span class="n">last_name</span><span class="o">=</span><span class="n">last_name</span><span class="p">,</span><span class="n">JOs_path</span> <span class="o">=</span> <span class="n">JOs_path</span><span class="p">,</span><span class="n">serie</span><span class="o">=</span><span class="n">serie</span><span class="p">)</span>
+            <span class="n">person</span> <span class="o">=</span> <span class="n">main</span><span class="o">.</span><span class="n">search_person</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="n">first_name</span><span class="p">,</span><span class="n">last_name</span><span class="o">=</span><span class="n">last_name</span><span class="p">,</span><span class="n">know_series</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The file path passed is not a directory&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Alejandro VILLARREAL LARRAURI.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
