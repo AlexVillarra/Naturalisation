@@ -86,8 +86,13 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"></div>
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../JORF_reader.html">JORF_reader package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">JORF_reader</a></li>
+</ul>
+
             
           
         </div>
@@ -164,6 +169,7 @@
 <span class="kn">import</span> <span class="nn">jellyfish</span>
 <span class="kn">from</span> <span class="nn">py_pdf_parser</span> <span class="kn">import</span> <span class="n">loaders</span>
 <span class="kn">from</span> <span class="nn">py_pdf_parser.components</span> <span class="kn">import</span> <span class="n">PDFDocument</span>
+<span class="kn">from</span> <span class="nn">py_pdf_parser.exceptions</span> <span class="kn">import</span> <span class="n">PDFParserError</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="c1">#, Tuple</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -248,7 +254,7 @@
             <span class="k">with</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_decrees</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span> <span class="o">=</span> <span class="p">{</span><span class="n">ser</span><span class="p">:{}</span> <span class="k">for</span> <span class="n">ser</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]}</span>
         <span class="c1"># Look for and load decree string json if found</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">file_decrees_string</span><span class="p">:</span>
             <span class="n">file_decrees_string</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_path</span><span class="p">,</span><span class="s2">&quot;decrees_string.json&quot;</span><span class="p">)</span>
@@ -460,6 +466,9 @@
             <span class="c1"># For all files, open the PDF file and parse it to get all information</span>
             <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">):</span>
                 <span class="n">pdf_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_JOs_path</span><span class="p">,</span><span class="n">file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pdf_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping </span><span class="si">{</span><span class="n">pdf_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="kc">None</span>
                 <span class="n">date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">date</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
                     <span class="k">continue</span>
@@ -471,6 +480,8 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pdf_path is not found, or not the correct path to the pdf file&quot;</span><span class="p">)</span>
         <span class="n">current_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_date</span><span class="p">(</span><span class="n">pdf_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="o">=</span> <span class="n">current_date</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">decree_current_date</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decrees</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">serie</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">current_date</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mega_string</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">read_pdf</span><span class="p">(</span><span class="n">pdf_path</span><span class="o">=</span><span class="n">pdf_path</span><span class="p">)</span>
         <span class="c1"># Get all the persons found within the optimized string</span>
@@ -579,7 +590,7 @@
             <span class="k">return</span> <span class="s2">&quot;The simple search has not resulted in any result. Make sure name is spelled right. If name is spelled right, then the person has not yet been naturalized.&quot;</span>
         <span class="k">return</span> <span class="n">persona</span></div>
 <div class="viewcode-block" id="Reader.get_date"><a class="viewcode-back" href="../JORF_reader.html#JORF_reader.Reader.get_date">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_date</span><span class="p">(</span><span class="n">pdf</span><span class="p">:</span><span class="n">PDFDocument</span><span class="p">)</span> <span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_date</span><span class="p">(</span><span class="n">pdf</span><span class="p">:</span><span class="n">Union</span><span class="p">[</span><span class="n">PDFDocument</span><span class="p">,</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Static method to get the date of the decree.</span>
 
 <span class="sd">        Extract the date of the decree by reading specific argument of the PDF</span>
@@ -759,7 +770,7 @@
         <span class="k">if</span> <span class="n">serie</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">num</span><span class="si">:</span><span class="s1">03</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">55</span><span class="p">))</span><span class="o">+</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">301</span><span class="p">,</span><span class="mi">302</span><span class="p">,</span><span class="mi">303</span><span class="p">,</span><span class="mi">304</span><span class="p">,</span><span class="mi">305</span><span class="p">]]:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The series number is invalid: must be between 0 and 54, or within special numbers (300-305). If series number is correct but still encounter this problem, please contact the developers. See github https://github.com/AlexVillarra/Naturalisation for contact.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">main</span> <span class="o">=</span> <span class="n">JORF_Reader</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="n">first_name</span><span class="p">,</span><span class="n">last_name</span><span class="o">=</span><span class="n">last_name</span><span class="p">,</span><span class="n">JOs_path</span> <span class="o">=</span> <span class="n">JOs_path</span><span class="p">,</span><span class="n">serie</span><span class="o">=</span><span class="n">serie</span><span class="p">)</span>
+            <span class="n">main</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="n">first_name</span><span class="p">,</span><span class="n">last_name</span><span class="o">=</span><span class="n">last_name</span><span class="p">,</span><span class="n">JOs_path</span> <span class="o">=</span> <span class="n">JOs_path</span><span class="p">,</span><span class="n">serie</span><span class="o">=</span><span class="n">serie</span><span class="p">)</span>
             <span class="n">person</span> <span class="o">=</span> <span class="n">main</span><span class="o">.</span><span class="n">search_person</span><span class="p">(</span><span class="n">first_name</span><span class="o">=</span><span class="n">first_name</span><span class="p">,</span><span class="n">last_name</span><span class="o">=</span><span class="n">last_name</span><span class="p">,</span><span class="n">know_series</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>

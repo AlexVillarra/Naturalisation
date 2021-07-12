@@ -50,7 +50,7 @@ Documentation
 
    JORF_reader
    example
-..  modules
+   modules
 
 Indices and tables
 ==================
