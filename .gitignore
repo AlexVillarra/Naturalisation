@@ -8,6 +8,7 @@ __pycache__/*
 # Jupyter Notebook
 *.ipynb_checkpoints
 dev.ipynb
+get_decrees.ipynb
 
 ### Ignore pickles ###
 *.pkl

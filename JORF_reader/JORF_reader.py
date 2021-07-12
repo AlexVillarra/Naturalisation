@@ -10,6 +10,7 @@ import codecs
 import jellyfish
 from py_pdf_parser import loaders
 from py_pdf_parser.components import PDFDocument
+from py_pdf_parser.exceptions import PDFParserError
 from typing import Union#, Tuple
 from datetime import datetime
 
@@ -94,7 +95,7 @@ class Reader:
             with codecs.open(file_decrees, encoding='utf-8') as f:
                 self.decrees = json.load(f)
         else:
-            self.decrees = {}
+            self.decrees = {ser:{} for ser in list(range(0,55))+[300,301,302,303,304,305]}
         # Look for and load decree string json if found
         if not file_decrees_string:
             file_decrees_string = os.path.join(self._save_path,"decrees_string.json")
@@ -306,6 +307,9 @@ class Reader:
             # For all files, open the PDF file and parse it to get all information
             for file in os.listdir(self._JOs_path):
                 pdf_path = os.path.join(self._JOs_path,file)
+                if pdf_path in self.decrees[self.serie].values():
+                    print(f"Skipping {pdf_path} for {self.serie}")
+                    return None
                 date = self.get_date(pdf_path)
                 if date is None :
                     continue
@@ -317,6 +321,8 @@ class Reader:
             print("pdf_path is not found, or not the correct path to the pdf file")
         current_date = self.get_date(pdf_path)
         self.decree_current_date = current_date
+        if self.decree_current_date in self.decrees[self.serie].keys():
+            return None
         if current_date not in self.mega_string.keys() :
             self.read_pdf(pdf_path=pdf_path)
         # Get all the persons found within the optimized string
@@ -425,7 +431,7 @@ class Reader:
             return "The simple search has not resulted in any result. Make sure name is spelled right. If name is spelled right, then the person has not yet been naturalized."
         return persona
     @staticmethod
-    def get_date(pdf:PDFDocument) ->str:
+    def get_date(pdf:Union[PDFDocument,str]) ->str:
         """Static method to get the date of the decree.
 
         Extract the date of the decree by reading specific argument of the PDF
@@ -605,7 +611,7 @@ if __name__ == "__main__":
         if serie not in [f'{num:03}' for num in list(range(0,55))+[300,301,302,303,304,305]]:
             print("The series number is invalid: must be between 0 and 54, or within special numbers (300-305). If series number is correct but still encounter this problem, please contact the developers. See github https://github.com/AlexVillarra/Naturalisation for contact.")
         else:
-            main = JORF_Reader(first_name=first_name,last_name=last_name,JOs_path = JOs_path,serie=serie)
+            main = Reader(first_name=first_name,last_name=last_name,JOs_path = JOs_path,serie=serie)
             person = main.search_person(first_name=first_name,last_name=last_name,know_series=True)
             print(person)
     else:
